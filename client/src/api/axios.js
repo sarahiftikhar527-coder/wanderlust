@@ -1,11 +1,15 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000/api",
+
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+
   timeout: 15000,
 });
 
@@ -47,15 +51,12 @@ API.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 API.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
+
   (error) => {
     const status = error.response?.status;
     const currentPath = window.location.pathname;

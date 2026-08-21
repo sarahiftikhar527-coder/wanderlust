@@ -1,10 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const mongoURI =
-      process.env.MONGODB_URI ||
-      'mongodb://127.0.0.1:27017/wanderlust';
+    const mongoURI = process.env.MONGODB_URI;
+
+    if (!mongoURI) {
+      throw new Error(
+        "MONGODB_URI is not defined in environment variables"
+      );
+    }
 
     const options = {
       maxPoolSize: 10,
@@ -19,20 +23,20 @@ const connectDB = async () => {
     );
   } catch (error) {
     console.error(`Database connection failed: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 
-mongoose.connection.on('error', (err) => {
+mongoose.connection.on("error", (err) => {
   console.error(`MongoDB connection error: ${err.message}`);
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.warn('MongoDB disconnected. Attempting reconnect...');
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected");
 });
 
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected');
+mongoose.connection.on("reconnected", () => {
+  console.log("MongoDB reconnected");
 });
 
 module.exports = connectDB;

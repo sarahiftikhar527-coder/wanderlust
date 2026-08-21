@@ -1,9 +1,7 @@
 module.exports = {
   jwt: {
-    secret:
-      process.env.JWT_SECRET ||
-      'fallback_dev_secret_change_in_production',
-    expire: process.env.JWT_EXPIRE || '7d',
+    secret: process.env.JWT_SECRET,
+    expire: process.env.JWT_EXPIRE || "7d",
     cookieExpire: 7 * 24 * 60 * 60 * 1000,
   },
 
@@ -21,11 +19,11 @@ module.exports = {
   },
 
   app: {
-    name: 'Wanderlust',
-    env: process.env.NODE_ENV || 'development',
+    name: "Wanderlust",
+    env: process.env.NODE_ENV || "development",
     port: Number(process.env.PORT) || 5000,
     clientUrl:
-      process.env.CLIENT_URL || 'http://localhost:5173',
+      process.env.CLIENT_URL || "http://localhost:5173",
   },
 
   cloudinary: {
