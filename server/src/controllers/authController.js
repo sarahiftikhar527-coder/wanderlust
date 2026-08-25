@@ -1,46 +1,47 @@
-const User = require('../models/User');
-const Experience = require('../models/Experience');
-const Notification = require('../models/Notification');
-const LoginActivity = require('../models/LoginActivity');
-const { signToken } = require('../utils/jwt');
-const { success } = require('../utils/response');
-const AppError = require('../utils/AppError');
-const { sendLoginEmail } = require('../utils/sendEmail');
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const Experience = require("../models/Experience");
+const Notification = require("../models/Notification");
+const LoginActivity = require("../models/LoginActivity");
+const { signToken } = require("../utils/jwt");
+const { success } = require("../utils/response");
+const AppError = require("../utils/AppError");
+const { sendLoginEmail } = require("../utils/sendEmail");
 
 const normalizeEmail = (email) => {
-  if (typeof email !== 'string') {
-    return '';
+  if (typeof email !== "string") {
+    return "";
   }
 
   return email.trim().toLowerCase();
 };
 
 const normalizeString = (value) => {
-  if (typeof value !== 'string') {
-    return '';
+  if (typeof value !== "string") {
+    return "";
   }
 
   return value.trim();
 };
 
 const getClientIp = (req) => {
-  const forwarded = req.headers['x-forwarded-for'];
+  const forwarded = req.headers["x-forwarded-for"];
 
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    return forwarded.split(",")[0].trim();
   }
 
-  return req.ip || req.socket?.remoteAddress || '';
+  return req.ip || req.socket?.remoteAddress || "";
 };
 
 const getUserAgent = (req) => {
-  return req.get('user-agent') || '';
+  return req.get("user-agent") || "";
 };
 
 const parseUserAgent = (userAgent) => {
-  let browser = 'Unknown';
-  let operatingSystem = 'Unknown';
-  let device = 'Desktop';
+  let browser = "Unknown";
+  let operatingSystem = "Unknown";
+  let device = "Desktop";
 
   if (!userAgent) {
     return {
@@ -51,39 +52,37 @@ const parseUserAgent = (userAgent) => {
   }
 
   if (/Edg\/[\d.]+/i.test(userAgent)) {
-    browser = 'Microsoft Edge';
+    browser = "Microsoft Edge";
   } else if (/OPR\/[\d.]+/i.test(userAgent)) {
-    browser = 'Opera';
+    browser = "Opera";
   } else if (/Chrome\/[\d.]+/i.test(userAgent)) {
-    browser = 'Google Chrome';
+    browser = "Google Chrome";
   } else if (/Firefox\/[\d.]+/i.test(userAgent)) {
-    browser = 'Mozilla Firefox';
+    browser = "Mozilla Firefox";
   } else if (/Safari\/[\d.]+/i.test(userAgent)) {
-    browser = 'Safari';
+    browser = "Safari";
   } else if (/MSIE|Trident/i.test(userAgent)) {
-    browser = 'Internet Explorer';
+    browser = "Internet Explorer";
   }
 
   if (/Windows NT/i.test(userAgent)) {
-    operatingSystem = 'Windows';
+    operatingSystem = "Windows";
   } else if (/Android/i.test(userAgent)) {
-    operatingSystem = 'Android';
+    operatingSystem = "Android";
   } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
-    operatingSystem = 'iOS';
+    operatingSystem = "iOS";
   } else if (/Mac OS X/i.test(userAgent)) {
-    operatingSystem = 'macOS';
+    operatingSystem = "macOS";
   } else if (/Linux/i.test(userAgent)) {
-    operatingSystem = 'Linux';
+    operatingSystem = "Linux";
   } else if (/CrOS/i.test(userAgent)) {
-    operatingSystem = 'ChromeOS';
+    operatingSystem = "ChromeOS";
   }
 
-  if (/Mobile|Android|iPhone|iPad|iPod/i.test(userAgent)) {
-    if (/iPad/i.test(userAgent)) {
-      device = 'Tablet';
-    } else {
-      device = 'Mobile';
-    }
+  if (/iPad/i.test(userAgent)) {
+    device = "Tablet";
+  } else if (/Mobile|Android|iPhone|iPod/i.test(userAgent)) {
+    device = "Mobile";
   }
 
   return {
@@ -96,7 +95,7 @@ const parseUserAgent = (userAgent) => {
 const createLoginActivity = async (
   req,
   user,
-  status = 'SUCCESS'
+  status = "SUCCESS"
 ) => {
   try {
     if (!user || !user._id) {
@@ -124,7 +123,7 @@ const createLoginActivity = async (
     });
   } catch (error) {
     console.error(
-      'Login activity creation failed:',
+      "Login activity creation failed:",
       error.message
     );
   }
@@ -138,7 +137,7 @@ const sendLoginNotificationEmail = async (
     if (
       !user ||
       !user.email ||
-      typeof sendLoginEmail !== 'function'
+      typeof sendLoginEmail !== "function"
     ) {
       return;
     }
@@ -162,7 +161,7 @@ const sendLoginNotificationEmail = async (
     });
   } catch (error) {
     console.error(
-      'Login email notification failed:',
+      "Login email notification failed:",
       error.message
     );
   }
@@ -170,7 +169,7 @@ const sendLoginNotificationEmail = async (
 
 const sanitizeUser = (user) => {
   const userObject =
-    typeof user.toObject === 'function'
+    typeof user.toObject === "function"
       ? user.toObject()
       : { ...user };
 
@@ -201,7 +200,7 @@ exports.register = async (
     if (!normalizedName) {
       return next(
         new AppError(
-          'Name is required',
+          "Name is required",
           400
         )
       );
@@ -210,7 +209,7 @@ exports.register = async (
     if (normalizedName.length < 2) {
       return next(
         new AppError(
-          'Name must be at least 2 characters',
+          "Name must be at least 2 characters",
           400
         )
       );
@@ -219,7 +218,7 @@ exports.register = async (
     if (normalizedName.length > 60) {
       return next(
         new AppError(
-          'Name cannot exceed 60 characters',
+          "Name cannot exceed 60 characters",
           400
         )
       );
@@ -228,7 +227,7 @@ exports.register = async (
     if (!normalizedEmail) {
       return next(
         new AppError(
-          'Email is required',
+          "Email is required",
           400
         )
       );
@@ -240,19 +239,19 @@ exports.register = async (
     if (!emailRegex.test(normalizedEmail)) {
       return next(
         new AppError(
-          'Please enter a valid email address',
+          "Please enter a valid email address",
           400
         )
       );
     }
 
     if (
-      typeof password !== 'string' ||
+      typeof password !== "string" ||
       !password
     ) {
       return next(
         new AppError(
-          'Password is required',
+          "Password is required",
           400
         )
       );
@@ -261,7 +260,7 @@ exports.register = async (
     if (password.length < 6) {
       return next(
         new AppError(
-          'Password must be at least 6 characters',
+          "Password must be at least 6 characters",
           400
         )
       );
@@ -275,7 +274,7 @@ exports.register = async (
     if (existingUser) {
       return next(
         new AppError(
-          'An account with this email already exists',
+          "An account with this email already exists",
           409
         )
       );
@@ -285,20 +284,20 @@ exports.register = async (
       name: normalizedName,
       email: normalizedEmail,
       password,
-      role: 'USER',
+      role: "USER",
       isActive: true,
     });
 
     try {
       await Notification.create({
         user: user._id,
-        title: 'Welcome to Wanderlust!',
+        title: "Welcome to Wanderlust!",
         message: `Hi ${user.name}, welcome to Wanderlust. Start exploring curated travel experiences from around the world.`,
-        type: 'WELCOME',
+        type: "WELCOME",
       });
     } catch (notificationError) {
       console.error(
-        'Welcome notification creation failed:',
+        "Welcome notification creation failed:",
         notificationError.message
       );
     }
@@ -312,7 +311,7 @@ exports.register = async (
     await createLoginActivity(
       req,
       user,
-      'SUCCESS'
+      "SUCCESS"
     );
 
     await sendLoginNotificationEmail(
@@ -326,14 +325,14 @@ exports.register = async (
         token,
         user: sanitizeUser(user),
       },
-      'Account created successfully',
+      "Account created successfully",
       201
     );
   } catch (err) {
     if (err.code === 11000) {
       return next(
         new AppError(
-          'An account with this email already exists',
+          "An account with this email already exists",
           409
         )
       );
@@ -360,7 +359,7 @@ exports.login = async (
     if (!normalizedEmail) {
       return next(
         new AppError(
-          'Email is required',
+          "Email is required",
           400
         )
       );
@@ -372,19 +371,19 @@ exports.login = async (
     if (!emailRegex.test(normalizedEmail)) {
       return next(
         new AppError(
-          'Please enter a valid email address',
+          "Please enter a valid email address",
           400
         )
       );
     }
 
     if (
-      typeof password !== 'string' ||
+      typeof password !== "string" ||
       !password
     ) {
       return next(
         new AppError(
-          'Password is required',
+          "Password is required",
           400
         )
       );
@@ -393,12 +392,12 @@ exports.login = async (
     const user =
       await User.findOne({
         email: normalizedEmail,
-      }).select('+password');
+      }).select("+password");
 
     if (!user) {
       return next(
         new AppError(
-          'Invalid email or password',
+          "Invalid email or password",
           401
         )
       );
@@ -408,12 +407,12 @@ exports.login = async (
       await createLoginActivity(
         req,
         user,
-        'FAILED'
+        "FAILED"
       );
 
       return next(
         new AppError(
-          'Your account has been deactivated. Please contact support.',
+          "Your account has been deactivated. Please contact support.",
           403
         )
       );
@@ -423,12 +422,12 @@ exports.login = async (
       await createLoginActivity(
         req,
         user,
-        'FAILED'
+        "FAILED"
       );
 
       return next(
         new AppError(
-          'Unable to authenticate this account',
+          "Unable to authenticate this account",
           500
         )
       );
@@ -443,12 +442,12 @@ exports.login = async (
       await createLoginActivity(
         req,
         user,
-        'FAILED'
+        "FAILED"
       );
 
       return next(
         new AppError(
-          'Invalid email or password',
+          "Invalid email or password",
           401
         )
       );
@@ -463,7 +462,7 @@ exports.login = async (
     await createLoginActivity(
       req,
       user,
-      'SUCCESS'
+      "SUCCESS"
     );
 
     await sendLoginNotificationEmail(
@@ -477,7 +476,7 @@ exports.login = async (
         token,
         user: sanitizeUser(user),
       },
-      'Logged in successfully'
+      "Logged in successfully"
     );
   } catch (err) {
     next(err);
@@ -493,7 +492,7 @@ exports.logout = async (
     return success(
       res,
       null,
-      'Logged out successfully'
+      "Logged out successfully"
     );
   } catch (err) {
     next(err);
@@ -512,7 +511,7 @@ exports.getMe = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
@@ -522,14 +521,14 @@ exports.getMe = async (
       await User.findById(
         req.user._id
       ).populate(
-        'favorites',
-        'title coverImage price rating location'
+        "favorites",
+        "title coverImage price rating location"
       );
 
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -538,7 +537,7 @@ exports.getMe = async (
     if (!user.isActive) {
       return next(
         new AppError(
-          'Your account has been deactivated',
+          "Your account has been deactivated",
           403
         )
       );
@@ -549,7 +548,7 @@ exports.getMe = async (
       {
         user: sanitizeUser(user),
       },
-      'Profile fetched successfully'
+      "Profile fetched successfully"
     );
   } catch (err) {
     next(err);
@@ -568,18 +567,18 @@ exports.updateProfile = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
     }
 
     const allowedFields = [
-      'name',
-      'bio',
-      'location',
-      'phone',
-      'avatar',
+      "name",
+      "bio",
+      "location",
+      "phone",
+      "avatar",
     ];
 
     const updates = {};
@@ -592,7 +591,7 @@ exports.updateProfile = async (
         ) {
           updates[field] =
             typeof req.body[field] ===
-            'string'
+            "string"
               ? req.body[field].trim()
               : req.body[field];
         }
@@ -605,7 +604,7 @@ exports.updateProfile = async (
     ) {
       return next(
         new AppError(
-          'Name cannot be empty',
+          "Name cannot be empty",
           400
         )
       );
@@ -617,7 +616,7 @@ exports.updateProfile = async (
     ) {
       return next(
         new AppError(
-          'Name must be at least 2 characters',
+          "Name must be at least 2 characters",
           400
         )
       );
@@ -629,7 +628,7 @@ exports.updateProfile = async (
     ) {
       return next(
         new AppError(
-          'Name cannot exceed 60 characters',
+          "Name cannot exceed 60 characters",
           400
         )
       );
@@ -641,7 +640,7 @@ exports.updateProfile = async (
     ) {
       return next(
         new AppError(
-          'Bio cannot exceed 500 characters',
+          "Bio cannot exceed 500 characters",
           400
         )
       );
@@ -652,12 +651,11 @@ exports.updateProfile = async (
       updates.avatar !== null
     ) {
       if (
-        typeof updates.avatar !==
-        'string'
+        typeof updates.avatar !== "string"
       ) {
         return next(
           new AppError(
-            'Avatar must be a valid Cloudinary URL',
+            "Avatar must be a valid Cloudinary URL",
             400
           )
         );
@@ -669,12 +667,12 @@ exports.updateProfile = async (
       if (
         avatarUrl &&
         !avatarUrl.startsWith(
-          'https://res.cloudinary.com/'
+          "https://res.cloudinary.com/"
         )
       ) {
         return next(
           new AppError(
-            'Avatar must be a valid Cloudinary URL',
+            "Avatar must be a valid Cloudinary URL",
             400
           )
         );
@@ -696,7 +694,7 @@ exports.updateProfile = async (
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -707,7 +705,7 @@ exports.updateProfile = async (
       {
         user: sanitizeUser(user),
       },
-      'Profile updated successfully'
+      "Profile updated successfully"
     );
   } catch (err) {
     next(err);
@@ -726,7 +724,7 @@ exports.changePassword = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
@@ -738,24 +736,24 @@ exports.changePassword = async (
     } = req.body || {};
 
     if (
-      typeof currentPassword !== 'string' ||
+      typeof currentPassword !== "string" ||
       !currentPassword
     ) {
       return next(
         new AppError(
-          'Current password is required',
+          "Current password is required",
           400
         )
       );
     }
 
     if (
-      typeof newPassword !== 'string' ||
+      typeof newPassword !== "string" ||
       !newPassword
     ) {
       return next(
         new AppError(
-          'New password is required',
+          "New password is required",
           400
         )
       );
@@ -764,7 +762,7 @@ exports.changePassword = async (
     if (newPassword.length < 6) {
       return next(
         new AppError(
-          'New password must be at least 6 characters',
+          "New password must be at least 6 characters",
           400
         )
       );
@@ -773,12 +771,12 @@ exports.changePassword = async (
     const user =
       await User.findById(
         req.user._id
-      ).select('+password');
+      ).select("+password");
 
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -787,7 +785,7 @@ exports.changePassword = async (
     if (!user.isActive) {
       return next(
         new AppError(
-          'Your account has been deactivated',
+          "Your account has been deactivated",
           403
         )
       );
@@ -801,7 +799,7 @@ exports.changePassword = async (
     if (!isMatch) {
       return next(
         new AppError(
-          'Current password is incorrect',
+          "Current password is incorrect",
           400
         )
       );
@@ -815,7 +813,7 @@ exports.changePassword = async (
     if (samePassword) {
       return next(
         new AppError(
-          'New password must be different from your current password',
+          "New password must be different from your current password",
           400
         )
       );
@@ -828,7 +826,7 @@ exports.changePassword = async (
     return success(
       res,
       null,
-      'Password changed successfully'
+      "Password changed successfully"
     );
   } catch (err) {
     next(err);
@@ -847,7 +845,7 @@ exports.toggleFavorite = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
@@ -860,7 +858,7 @@ exports.toggleFavorite = async (
     if (!experienceId) {
       return next(
         new AppError(
-          'Experience ID is required',
+          "Experience ID is required",
           400
         )
       );
@@ -873,7 +871,7 @@ exports.toggleFavorite = async (
     ) {
       return next(
         new AppError(
-          'Invalid experience ID',
+          "Invalid experience ID",
           400
         )
       );
@@ -887,7 +885,7 @@ exports.toggleFavorite = async (
     if (!experience) {
       return next(
         new AppError(
-          'Experience not found',
+          "Experience not found",
           404
         )
       );
@@ -901,7 +899,7 @@ exports.toggleFavorite = async (
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -910,7 +908,7 @@ exports.toggleFavorite = async (
     if (!user.isActive) {
       return next(
         new AppError(
-          'Your account has been deactivated',
+          "Your account has been deactivated",
           403
         )
       );
@@ -954,8 +952,8 @@ exports.toggleFavorite = async (
         isFavorited,
       },
       isFavorited
-        ? 'Added to favorites'
-        : 'Removed from favorites'
+        ? "Added to favorites"
+        : "Removed from favorites"
     );
   } catch (err) {
     next(err);
@@ -974,7 +972,7 @@ exports.getFavorites = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
@@ -984,13 +982,13 @@ exports.getFavorites = async (
       await User.findById(
         req.user._id
       ).populate(
-        'favorites'
+        "favorites"
       );
 
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -999,7 +997,7 @@ exports.getFavorites = async (
     if (!user.isActive) {
       return next(
         new AppError(
-          'Your account has been deactivated',
+          "Your account has been deactivated",
           403
         )
       );
@@ -1011,7 +1009,7 @@ exports.getFavorites = async (
         favorites:
           user.favorites || [],
       },
-      'Favorites fetched successfully'
+      "Favorites fetched successfully"
     );
   } catch (err) {
     next(err);
@@ -1030,7 +1028,7 @@ exports.deleteAccount = async (
     ) {
       return next(
         new AppError(
-          'Authentication required',
+          "Authentication required",
           401
         )
       );
@@ -1044,7 +1042,7 @@ exports.deleteAccount = async (
     if (!user) {
       return next(
         new AppError(
-          'User not found',
+          "User not found",
           404
         )
       );
@@ -1062,7 +1060,7 @@ exports.deleteAccount = async (
     return success(
       res,
       null,
-      'Account deleted successfully'
+      "Account deleted successfully"
     );
   } catch (err) {
     next(err);
