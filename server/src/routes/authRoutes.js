@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 
 const router = express.Router();
 
@@ -7,20 +7,15 @@ const {
   login,
   updateProfile,
   changePassword,
-} = require('../validators/authValidators');
+} = require("../validators/authValidators");
 
-const { validate } = require('../middleware/validate');
-
-const { protect } = require('../middleware/auth');
-
-const {
-  authLimiter,
-} = require('../middleware/rateLimitMiddleware');
-
-const authController = require('../controllers/authController');
+const { validate } = require("../middleware/validate");
+const { protect } = require("../middleware/auth");
+const { authLimiter } = require("../middleware/rateLimitMiddleware");
+const authController = require("../controllers/authController");
 
 router.post(
-  '/register',
+  "/register",
   authLimiter,
   register,
   validate,
@@ -28,7 +23,7 @@ router.post(
 );
 
 router.post(
-  '/login',
+  "/login",
   authLimiter,
   login,
   validate,
@@ -36,19 +31,19 @@ router.post(
 );
 
 router.post(
-  '/logout',
+  "/logout",
   protect,
   authController.logout
 );
 
 router.get(
-  '/me',
+  "/me",
   protect,
   authController.getMe
 );
 
 router.put(
-  '/profile',
+  "/profile",
   protect,
   updateProfile,
   validate,
@@ -56,7 +51,7 @@ router.put(
 );
 
 router.put(
-  '/password',
+  "/password",
   protect,
   changePassword,
   validate,
@@ -64,19 +59,19 @@ router.put(
 );
 
 router.post(
-  '/favorites/:experienceId',
+  "/favorites/:experienceId",
   protect,
   authController.toggleFavorite
 );
 
 router.get(
-  '/favorites',
+  "/favorites",
   protect,
   authController.getFavorites
 );
 
 router.delete(
-  '/account',
+  "/account",
   protect,
   authController.deleteAccount
 );
