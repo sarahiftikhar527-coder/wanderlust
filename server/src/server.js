@@ -40,18 +40,26 @@ app.use(
     crossOriginResourcePolicy: {
       policy: "cross-origin",
     },
-    contentSecurityPolicy: config.app.env === "production",
+    contentSecurityPolicy:
+      config.app.env === "production"
+        ? false
+        : true,
   })
 );
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      if (
+        !origin ||
+        allowedOrigins.includes(origin)
+      ) {
+        return callback(null, true);
       }
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
     },
     credentials: true,
     methods: [
@@ -101,7 +109,8 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message: "Too many requests, please try again later.",
+    message:
+      "Too many requests, please try again later.",
   },
 });
 
@@ -110,7 +119,7 @@ app.use("/api", apiLimiter);
 app.get("/", (_req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to Wanderlust API 🚀",
+    message: "Welcome to Wanderlust API",
     version: "1.0.0",
     environment: config.app.env,
     api: "/api",
@@ -121,18 +130,21 @@ app.get("/", (_req, res) => {
 app.get("/api", (_req, res) => {
   res.status(200).json({
     success: true,
-    message: "Wanderlust API 🚀",
+    message: "Wanderlust API",
     version: "1.0.0",
     environment: config.app.env,
     endpoints: {
       health: "/api/health",
       auth: "/api/auth",
+      login: "/api/auth/login",
+      register: "/api/auth/register",
       experiences: "/api/experiences",
       categories: "/api/categories",
       bookings: "/api/bookings",
       notifications: "/api/notifications",
       admin: "/api/admin",
-      loginActivities: "/api/login-activities",
+      loginActivities:
+        "/api/login-activities",
       contacts: "/api/contacts",
     },
   });
@@ -147,16 +159,69 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/experiences", experienceRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/login-activities", loginActivityRoutes);
-app.use("/api/contacts", contactRoutes);
+app.get("/api/auth", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Authentication API is running",
+    endpoints: {
+      login: "POST /api/auth/login",
+      register: "POST /api/auth/register",
+      logout: "POST /api/auth/logout",
+      me: "GET /api/auth/me",
+      profile: "PUT /api/auth/profile",
+      password: "PUT /api/auth/password",
+      favorites:
+        "GET /api/auth/favorites",
+      toggleFavorite:
+        "POST /api/auth/favorites/:experienceId",
+      deleteAccount:
+        "DELETE /api/auth/account",
+    },
+  });
+});
+
+app.use(
+  "/api/auth",
+  authRoutes
+);
+
+app.use(
+  "/api/experiences",
+  experienceRoutes
+);
+
+app.use(
+  "/api/categories",
+  categoryRoutes
+);
+
+app.use(
+  "/api/bookings",
+  bookingRoutes
+);
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
+
+app.use(
+  "/api/admin",
+  adminRoutes
+);
+
+app.use(
+  "/api/login-activities",
+  loginActivityRoutes
+);
+
+app.use(
+  "/api/contacts",
+  contactRoutes
+);
 
 app.use(notFound);
+
 app.use(errorHandler);
 
 let server;
@@ -165,23 +230,44 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    console.log("MongoDB connected successfully");
+    console.log(
+      "MongoDB connected successfully"
+    );
 
-    const PORT = process.env.PORT || config.app.port || 5000;
+    const PORT =
+      process.env.PORT ||
+      config.app.port ||
+      5000;
 
-    server = app.listen(PORT, "0.0.0.0", () => {
-      console.log(
-        `Wanderlust API running on port ${PORT} in ${config.app.env} mode`
-      );
+    server = app.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
+        console.log(
+          `Wanderlust API running on port ${PORT} in ${config.app.env} mode`
+        );
 
-      console.log(
-        `API: http://localhost:${PORT}/api`
-      );
+        console.log(
+          `API: http://localhost:${PORT}/api`
+        );
 
-      console.log(
-        `Health: http://localhost:${PORT}/api/health`
-      );
-    });
+        console.log(
+          `Health: http://localhost:${PORT}/api/health`
+        );
+
+        console.log(
+          `Auth: http://localhost:${PORT}/api/auth`
+        );
+
+        console.log(
+          `Login: POST http://localhost:${PORT}/api/auth/login`
+        );
+
+        console.log(
+          `Register: POST http://localhost:${PORT}/api/auth/register`
+        );
+      }
+    );
   } catch (error) {
     console.error(
       "Failed to start Wanderlust server:",
@@ -211,31 +297,50 @@ const shutdown = (signal) => {
   });
 };
 
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err);
+process.on(
+  "unhandledRejection",
+  (err) => {
+    console.error(
+      "Unhandled Rejection:",
+      err
+    );
 
-  if (server) {
-    server.close(() => {
+    if (server) {
+      server.close(() => {
+        process.exit(1);
+      });
+    } else {
       process.exit(1);
-    });
-  } else {
-    process.exit(1);
+    }
   }
-});
+);
 
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
+process.on(
+  "uncaughtException",
+  (err) => {
+    console.error(
+      "Uncaught Exception:",
+      err
+    );
 
-  if (server) {
-    server.close(() => {
+    if (server) {
+      server.close(() => {
+        process.exit(1);
+      });
+    } else {
       process.exit(1);
-    });
-  } else {
-    process.exit(1);
+    }
   }
-});
+);
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+process.on(
+  "SIGTERM",
+  () => shutdown("SIGTERM")
+);
+
+process.on(
+  "SIGINT",
+  () => shutdown("SIGINT")
+);
 
 module.exports = app;
