@@ -27,14 +27,42 @@ const ROLE_OPTIONS = ["ALL", "USER", "ADMIN"];
 const DEFAULT_AVATAR_GRADIENT =
   "bg-gradient-to-br from-primary-400 to-primary-600";
 
+const normalizeRole = (role) => {
+  const normalized = String(role || "").trim().toUpperCase();
+
+  if (normalized === "OWNER") {
+    return "ADMIN";
+  }
+
+  if (normalized === "ADMINISTRATOR") {
+    return "ADMIN";
+  }
+
+  if (normalized === "ADMIN") {
+    return "ADMIN";
+  }
+
+  return "USER";
+};
+
 const getUserRole = (user) => {
-  return user?.role?.toUpperCase() || "USER";
+  return normalizeRole(user?.role);
+};
+
+const isAdminUser = (user) => {
+  const role = String(user?.role || "").trim().toUpperCase();
+
+  return (
+    role === "ADMIN" ||
+    role === "OWNER" ||
+    role === "ADMINISTRATOR"
+  );
 };
 
 const isUserActive = (user) => {
   return (
     user?.isActive !== false &&
-    user?.status?.toUpperCase() !== "INACTIVE"
+    String(user?.status || "").toUpperCase() !== "INACTIVE"
   );
 };
 
@@ -43,7 +71,21 @@ const getUserInitial = (user) => {
 };
 
 const getUserId = (user) => {
-  return user?._id || user?.id || "";
+  return String(user?._id || user?.id || "");
+};
+
+const getUsersFromResponse = (response) => {
+  const possibleData = [
+    response?.data?.data?.users,
+    response?.data?.users,
+    response?.data?.data,
+    response?.data?.results,
+    response?.data?.users?.data,
+  ];
+
+  const users = possibleData.find((item) => Array.isArray(item));
+
+  return Array.isArray(users) ? users : [];
 };
 
 const AdminUsers = () => {
@@ -63,13 +105,13 @@ const AdminUsers = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const showSuccess = (message) => {
+  const showSuccess = useCallback((message) => {
     setSuccess(message);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       setSuccess("");
     }, 3500);
-  };
+  }, []);
 
   const fetchUsers = useCallback(async (refresh = false) => {
     if (refresh) {
@@ -86,13 +128,9 @@ const AdminUsers = () => {
         limit: 100,
       });
 
-      const data =
-        response?.data?.data?.users ||
-        response?.data?.users ||
-        response?.data?.data ||
-        [];
+      const data = getUsersFromResponse(response);
 
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(data);
     } catch (err) {
       console.error("Users fetch error:", err);
 
@@ -128,8 +166,8 @@ const AdminUsers = () => {
         return true;
       }
 
-      const name = user?.name?.toLowerCase() || "";
-      const email = user?.email?.toLowerCase() || "";
+      const name = String(user?.name || "").toLowerCase();
+      const email = String(user?.email || "").toLowerCase();
       const id = getUserId(user).toLowerCase();
 
       return (
@@ -143,8 +181,8 @@ const AdminUsers = () => {
   const stats = useMemo(() => {
     const total = users.length;
 
-    const admins = users.filter(
-      (user) => getUserRole(user) === "ADMIN"
+    const admins = users.filter((user) =>
+      isAdminUser(user)
     ).length;
 
     const activeUsers = users.filter((user) =>
@@ -565,7 +603,9 @@ const AdminUsers = () => {
                       index={index}
                       deletingId={deletingId}
                       onView={() => setSelectedUser(user)}
-                      onDelete={() => deleteUser(getUserId(user))}
+                      onDelete={() =>
+                        deleteUser(getUserId(user))
+                      }
                     />
                   );
                 })}
@@ -984,7 +1024,8 @@ const StatCard = ({
 };
 
 const RoleBadge = ({ role }) => {
-  const isAdmin = role === "ADMIN";
+  const normalizedRole = normalizeRole(role);
+  const isAdmin = normalizedRole === "ADMIN";
 
   return (
     <span
@@ -1045,7 +1086,7 @@ const InfoRow = ({
 
         <p
           className="text-sm font-semibold text-gray-800 truncate mt-0.5"
-          title={value}
+          title={String(value || "")}
         >
           {value}
         </p>

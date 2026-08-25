@@ -33,8 +33,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-
     setUser(null);
+  }, []);
+
+  const normalizeRole = useCallback((value) => {
+    return String(value || "").trim().toLowerCase();
   }, []);
 
   const isObject = useCallback((value) => {
@@ -45,26 +48,6 @@ export const AuthProvider = ({ children }) => {
     );
   }, []);
 
-  const extractResponseData = useCallback(
-    (response) => {
-      let data = response?.data;
-
-      if (!data) {
-        return {};
-      }
-
-      if (
-        isObject(data) &&
-        isObject(data.data)
-      ) {
-        data = data.data;
-      }
-
-      return data;
-    },
-    [isObject]
-  );
-
   const extractUser = useCallback(
     (response) => {
       const root = response?.data;
@@ -73,86 +56,56 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
-      if (
-        root?.user &&
-        typeof root.user === "object"
-      ) {
+      if (isObject(root?.user)) {
         return root.user;
       }
 
-      if (
-        root?.currentUser &&
-        typeof root.currentUser === "object"
-      ) {
+      if (isObject(root?.currentUser)) {
         return root.currentUser;
       }
 
-      if (
-        root?.profile &&
-        typeof root.profile === "object"
-      ) {
+      if (isObject(root?.profile)) {
         return root.profile;
       }
 
-      if (
-        root?.data?.user &&
-        typeof root.data.user === "object"
-      ) {
+      if (isObject(root?.data?.user)) {
         return root.data.user;
       }
 
-      if (
-        root?.data?.currentUser &&
-        typeof root.data.currentUser === "object"
-      ) {
+      if (isObject(root?.data?.currentUser)) {
         return root.data.currentUser;
       }
 
-      if (
-        root?.data?.profile &&
-        typeof root.data.profile === "object"
-      ) {
+      if (isObject(root?.data?.profile)) {
         return root.data.profile;
       }
 
-      if (
-        root?.data?.data?.user &&
-        typeof root.data.data.user === "object"
-      ) {
+      if (isObject(root?.data?.data?.user)) {
         return root.data.data.user;
       }
 
-      if (
-        root?.data?.data?.currentUser &&
-        typeof root.data.data.currentUser === "object"
-      ) {
+      if (isObject(root?.data?.data?.currentUser)) {
         return root.data.data.currentUser;
       }
 
-      if (
-        root?.data?.data?.profile &&
-        typeof root.data.data.profile === "object"
-      ) {
+      if (isObject(root?.data?.data?.profile)) {
         return root.data.data.profile;
       }
 
-      if (
-        typeof root === "object" &&
-        root._id
-      ) {
+      if (isObject(root) && (root._id || root.id)) {
         return root;
       }
 
       if (
-        typeof root?.data === "object" &&
-        root.data?._id
+        isObject(root?.data) &&
+        (root.data._id || root.data.id)
       ) {
         return root.data;
       }
 
       return null;
     },
-    []
+    [isObject]
   );
 
   const extractAuthData = useCallback(
@@ -161,22 +114,15 @@ export const AuthProvider = ({ children }) => {
 
       let data = root;
 
-      if (
-        root?.data &&
-        typeof root.data === "object"
-      ) {
+      if (isObject(root?.data)) {
         data = root.data;
       }
 
-      if (
-        data?.data &&
-        typeof data.data === "object"
-      ) {
+      if (isObject(data?.data)) {
         data = data.data;
       }
 
-      const authenticatedUser =
-        extractUser(response);
+      const authenticatedUser = extractUser(response);
 
       return {
         token:
@@ -198,7 +144,7 @@ export const AuthProvider = ({ children }) => {
         user: authenticatedUser,
       };
     },
-    [extractUser]
+    [extractUser, isObject]
   );
 
   const saveAuth = useCallback(
@@ -208,10 +154,7 @@ export const AuthProvider = ({ children }) => {
       authenticatedUser = null,
     }) => {
       if (token) {
-        localStorage.setItem(
-          TOKEN_KEY,
-          token
-        );
+        localStorage.setItem(TOKEN_KEY, token);
       }
 
       if (refreshToken) {
@@ -222,28 +165,34 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (authenticatedUser) {
+        const normalizedUser = {
+          ...authenticatedUser,
+          _id:
+            authenticatedUser._id ||
+            authenticatedUser.id,
+          role: normalizeRole(authenticatedUser.role),
+        };
+
         localStorage.setItem(
           USER_KEY,
-          JSON.stringify(authenticatedUser)
+          JSON.stringify(normalizedUser)
         );
 
-        setUser(authenticatedUser);
+        setUser(normalizedUser);
       }
     },
-    []
+    [normalizeRole]
   );
 
   const loadStoredUser = useCallback(() => {
     try {
-      const storedUser =
-        localStorage.getItem(USER_KEY);
+      const storedUser = localStorage.getItem(USER_KEY);
 
       if (!storedUser) {
         return null;
       }
 
-      const parsedUser =
-        JSON.parse(storedUser);
+      const parsedUser = JSON.parse(storedUser);
 
       if (
         !parsedUser ||
@@ -253,24 +202,31 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
-      if (
-        !parsedUser._id &&
-        !parsedUser.id
-      ) {
+      if (!parsedUser._id && !parsedUser.id) {
         localStorage.removeItem(USER_KEY);
         return null;
       }
 
-      return parsedUser;
+      const normalizedUser = {
+        ...parsedUser,
+        _id: parsedUser._id || parsedUser.id,
+        role: normalizeRole(parsedUser.role),
+      };
+
+      localStorage.setItem(
+        USER_KEY,
+        JSON.stringify(normalizedUser)
+      );
+
+      return normalizedUser;
     } catch {
       localStorage.removeItem(USER_KEY);
       return null;
     }
-  }, []);
+  }, [normalizeRole]);
 
   const loadUser = useCallback(async () => {
-    const token =
-      localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
       setUser(null);
@@ -278,19 +234,16 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    const storedUser =
-      loadStoredUser();
+    const storedUser = loadStoredUser();
 
     if (storedUser) {
       setUser(storedUser);
     }
 
     try {
-      const response =
-        await authService.getMe();
+      const response = await authService.getMe();
 
-      const currentUser =
-        extractUser(response);
+      const currentUser = extractUser(response);
 
       if (
         currentUser &&
@@ -326,10 +279,9 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(
     async (credentials) => {
       try {
-        const response =
-          await authService.login(
-            credentials
-          );
+        const response = await authService.login(
+          credentials
+        );
 
         const {
           token,
@@ -352,18 +304,25 @@ export const AuthProvider = ({ children }) => {
           );
         }
 
+        const normalizedUser = {
+          ...loggedInUser,
+          _id:
+            loggedInUser._id ||
+            loggedInUser.id,
+          role: normalizeRole(loggedInUser.role),
+        };
+
         saveAuth({
           token,
           refreshToken,
-          authenticatedUser:
-            loggedInUser,
+          authenticatedUser: normalizedUser,
         });
 
         return {
           success: true,
           token,
           refreshToken,
-          user: loggedInUser,
+          user: normalizedUser,
         };
       } catch (error) {
         clearAuth();
@@ -373,6 +332,7 @@ export const AuthProvider = ({ children }) => {
     [
       clearAuth,
       extractAuthData,
+      normalizeRole,
       saveAuth,
     ]
   );
@@ -381,9 +341,7 @@ export const AuthProvider = ({ children }) => {
     async (userData) => {
       try {
         const response =
-          await authService.register(
-            userData
-          );
+          await authService.register(userData);
 
         const {
           token,
@@ -406,18 +364,27 @@ export const AuthProvider = ({ children }) => {
           );
         }
 
+        const normalizedUser = {
+          ...registeredUser,
+          _id:
+            registeredUser._id ||
+            registeredUser.id,
+          role: normalizeRole(
+            registeredUser.role
+          ),
+        };
+
         saveAuth({
           token,
           refreshToken,
-          authenticatedUser:
-            registeredUser,
+          authenticatedUser: normalizedUser,
         });
 
         return {
           success: true,
           token,
           refreshToken,
-          user: registeredUser,
+          user: normalizedUser,
         };
       } catch (error) {
         clearAuth();
@@ -427,19 +394,18 @@ export const AuthProvider = ({ children }) => {
     [
       clearAuth,
       extractAuthData,
+      normalizeRole,
       saveAuth,
     ]
   );
 
   const logout = useCallback(async () => {
-    const token =
-      localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
 
     try {
       if (
         token &&
-        typeof authService.logout ===
-          "function"
+        typeof authService.logout === "function"
       ) {
         await authService.logout();
       }
@@ -468,9 +434,8 @@ export const AuthProvider = ({ children }) => {
 
       const normalizedUser = {
         ...updatedUser,
-        _id:
-          updatedUser._id ||
-          updatedUser.id,
+        _id: userId,
+        role: normalizeRole(updatedUser.role),
       };
 
       setUser(normalizedUser);
@@ -480,78 +445,91 @@ export const AuthProvider = ({ children }) => {
         JSON.stringify(normalizedUser)
       );
     },
-    []
+    [normalizeRole]
   );
 
-  const refreshUser = useCallback(
-    async () => {
-      const token =
-        localStorage.getItem(
-          TOKEN_KEY
+  const refreshUser = useCallback(async () => {
+    const token =
+      localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+      clearAuth();
+      return null;
+    }
+
+    try {
+      const response =
+        await authService.getMe();
+
+      const currentUser =
+        extractUser(response);
+
+      if (
+        !currentUser ||
+        typeof currentUser !== "object"
+      ) {
+        throw new Error(
+          "Unable to retrieve authenticated user."
         );
-
-      if (!token) {
-        clearAuth();
-        return null;
       }
 
-      try {
-        const response =
-          await authService.getMe();
+      const normalizedUser = {
+        ...currentUser,
+        _id:
+          currentUser._id ||
+          currentUser.id,
+        role: normalizeRole(
+          currentUser.role
+        ),
+      };
 
-        const currentUser =
-          extractUser(response);
+      saveAuth({
+        token,
+        authenticatedUser:
+          normalizedUser,
+      });
 
-        if (
-          !currentUser ||
-          typeof currentUser !== "object"
-        ) {
-          throw new Error(
-            "Unable to retrieve authenticated user."
-          );
-        }
+      return normalizedUser;
+    } catch (error) {
+      const storedUser =
+        loadStoredUser();
 
-        saveAuth({
-          token,
-          authenticatedUser:
-            currentUser,
-        });
-
-        return currentUser;
-      } catch (error) {
-        const storedUser =
-          loadStoredUser();
-
-        if (storedUser) {
-          setUser(storedUser);
-          return storedUser;
-        }
-
-        clearAuth();
-        throw error;
+      if (storedUser) {
+        setUser(storedUser);
+        return storedUser;
       }
-    },
-    [
-      clearAuth,
-      extractUser,
-      loadStoredUser,
-      saveAuth,
-    ]
-  );
+
+      clearAuth();
+      throw error;
+    }
+  }, [
+    clearAuth,
+    extractUser,
+    loadStoredUser,
+    normalizeRole,
+    saveAuth,
+  ]);
+
+  const userRole = useMemo(() => {
+    return normalizeRole(user?.role);
+  }, [user, normalizeRole]);
 
   const isAdmin = useMemo(() => {
-    const role = String(
-      user?.role || ""
-    ).toLowerCase();
+    return (
+      userRole === "admin" ||
+      userRole === "owner" ||
+      userRole === "superadmin" ||
+      userRole === "super_admin"
+    );
+  }, [userRole]);
 
-    return role === "admin";
-  }, [user]);
+  const isOwner = useMemo(() => {
+    return userRole === "owner";
+  }, [userRole]);
 
   const isAuthenticated = useMemo(() => {
     const token =
-      localStorage.getItem(
-        TOKEN_KEY
-      );
+      localStorage.getItem(TOKEN_KEY);
 
     return Boolean(
       user &&
@@ -562,9 +540,7 @@ export const AuthProvider = ({ children }) => {
 
   const token =
     typeof window !== "undefined"
-      ? localStorage.getItem(
-          TOKEN_KEY
-        )
+      ? localStorage.getItem(TOKEN_KEY)
       : null;
 
   const value = useMemo(
@@ -572,8 +548,10 @@ export const AuthProvider = ({ children }) => {
       user,
       loading,
       token,
+      userRole,
       isAuthenticated,
       isAdmin,
+      isOwner,
       login,
       register,
       logout,
@@ -585,8 +563,10 @@ export const AuthProvider = ({ children }) => {
       user,
       loading,
       token,
+      userRole,
       isAuthenticated,
       isAdmin,
+      isOwner,
       login,
       register,
       logout,
