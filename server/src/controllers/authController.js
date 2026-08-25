@@ -1,8 +1,10 @@
 const mongoose = require("mongoose");
+
 const User = require("../models/User");
 const Experience = require("../models/Experience");
 const Notification = require("../models/Notification");
 const LoginActivity = require("../models/LoginActivity");
+
 const { signToken } = require("../utils/jwt");
 const { success } = require("../utils/response");
 const AppError = require("../utils/AppError");
@@ -92,11 +94,7 @@ const parseUserAgent = (userAgent) => {
   };
 };
 
-const createLoginActivity = async (
-  req,
-  user,
-  status = "SUCCESS"
-) => {
+const createLoginActivity = async (req, user, status = "SUCCESS") => {
   try {
     if (!user || !user._id) {
       return;
@@ -129,10 +127,7 @@ const createLoginActivity = async (
   }
 };
 
-const sendLoginNotificationEmail = async (
-  user,
-  req
-) => {
+const sendLoginNotificationEmail = async (user, req) => {
   try {
     if (
       !user ||
@@ -179,11 +174,7 @@ const sanitizeUser = (user) => {
   return userObject;
 };
 
-exports.register = async (
-  req,
-  res,
-  next
-) => {
+exports.register = async (req, res, next) => {
   try {
     const {
       name,
@@ -191,18 +182,12 @@ exports.register = async (
       password,
     } = req.body || {};
 
-    const normalizedName =
-      normalizeString(name);
-
-    const normalizedEmail =
-      normalizeEmail(email);
+    const normalizedName = normalizeString(name);
+    const normalizedEmail = normalizeEmail(email);
 
     if (!normalizedName) {
       return next(
-        new AppError(
-          "Name is required",
-          400
-        )
+        new AppError("Name is required", 400)
       );
     }
 
@@ -226,15 +211,11 @@ exports.register = async (
 
     if (!normalizedEmail) {
       return next(
-        new AppError(
-          "Email is required",
-          400
-        )
+        new AppError("Email is required", 400)
       );
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
       return next(
@@ -266,10 +247,9 @@ exports.register = async (
       );
     }
 
-    const existingUser =
-      await User.findOne({
-        email: normalizedEmail,
-      });
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingUser) {
       return next(
@@ -342,19 +322,14 @@ exports.register = async (
   }
 };
 
-exports.login = async (
-  req,
-  res,
-  next
-) => {
+exports.login = async (req, res, next) => {
   try {
     const {
       email,
       password,
     } = req.body || {};
 
-    const normalizedEmail =
-      normalizeEmail(email);
+    const normalizedEmail = normalizeEmail(email);
 
     if (!normalizedEmail) {
       return next(
@@ -365,8 +340,7 @@ exports.login = async (
       );
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
       return next(
@@ -389,10 +363,9 @@ exports.login = async (
       );
     }
 
-    const user =
-      await User.findOne({
-        email: normalizedEmail,
-      }).select("+password");
+    const user = await User.findOne({
+      email: normalizedEmail,
+    }).select("+password");
 
     if (!user) {
       return next(
@@ -433,10 +406,9 @@ exports.login = async (
       );
     }
 
-    const isMatch =
-      await user.comparePassword(
-        password
-      );
+    const isMatch = await user.comparePassword(
+      password
+    );
 
     if (!isMatch) {
       await createLoginActivity(
@@ -483,11 +455,7 @@ exports.login = async (
   }
 };
 
-exports.logout = async (
-  req,
-  res,
-  next
-) => {
+exports.logout = async (req, res, next) => {
   try {
     return success(
       res,
@@ -499,16 +467,9 @@ exports.logout = async (
   }
 };
 
-exports.getMe = async (
-  req,
-  res,
-  next
-) => {
+exports.getMe = async (req, res, next) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
@@ -517,13 +478,12 @@ exports.getMe = async (
       );
     }
 
-    const user =
-      await User.findById(
-        req.user._id
-      ).populate(
-        "favorites",
-        "title coverImage price rating location"
-      );
+    const user = await User.findById(
+      req.user._id
+    ).populate(
+      "favorites",
+      "title coverImage price rating location"
+    );
 
     if (!user) {
       return next(
@@ -561,10 +521,7 @@ exports.updateProfile = async (
   next
 ) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
@@ -583,20 +540,17 @@ exports.updateProfile = async (
 
     const updates = {};
 
-    allowedFields.forEach(
-      (field) => {
-        if (
-          req.body &&
-          req.body[field] !== undefined
-        ) {
-          updates[field] =
-            typeof req.body[field] ===
-            "string"
-              ? req.body[field].trim()
-              : req.body[field];
-        }
+    allowedFields.forEach((field) => {
+      if (
+        req.body &&
+        req.body[field] !== undefined
+      ) {
+        updates[field] =
+          typeof req.body[field] === "string"
+            ? req.body[field].trim()
+            : req.body[field];
       }
-    );
+    });
 
     if (
       updates.name !== undefined &&
@@ -718,10 +672,7 @@ exports.changePassword = async (
   next
 ) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
@@ -839,10 +790,7 @@ exports.toggleFavorite = async (
   next
 ) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
@@ -914,9 +862,7 @@ exports.toggleFavorite = async (
       );
     }
 
-    if (
-      !Array.isArray(user.favorites)
-    ) {
+    if (!Array.isArray(user.favorites)) {
       user.favorites = [];
     }
 
@@ -930,17 +876,10 @@ exports.toggleFavorite = async (
     let isFavorited;
 
     if (index !== -1) {
-      user.favorites.splice(
-        index,
-        1
-      );
-
+      user.favorites.splice(index, 1);
       isFavorited = false;
     } else {
-      user.favorites.push(
-        experienceId
-      );
-
+      user.favorites.push(experienceId);
       isFavorited = true;
     }
 
@@ -966,10 +905,7 @@ exports.getFavorites = async (
   next
 ) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
@@ -981,9 +917,7 @@ exports.getFavorites = async (
     const user =
       await User.findById(
         req.user._id
-      ).populate(
-        "favorites"
-      );
+      ).populate("favorites");
 
     if (!user) {
       return next(
@@ -1006,8 +940,7 @@ exports.getFavorites = async (
     return success(
       res,
       {
-        favorites:
-          user.favorites || [],
+        favorites: user.favorites || [],
       },
       "Favorites fetched successfully"
     );
@@ -1022,10 +955,7 @@ exports.deleteAccount = async (
   next
 ) => {
   try {
-    if (
-      !req.user ||
-      !req.user._id
-    ) {
+    if (!req.user || !req.user._id) {
       return next(
         new AppError(
           "Authentication required",
