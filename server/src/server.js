@@ -29,19 +29,30 @@ const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
+const allowedOrigins = [
+  "https://wanderlust-travel-one.vercel.app",
+  "https://wanderlust-travel-fn2ku4ewn-sarahiftikhar527-6790s-projects.vercel.app",
+  config.app.clientUrl,
+].filter(Boolean);
+
 app.use(
   helmet({
     crossOriginResourcePolicy: {
       policy: "cross-origin",
     },
-    contentSecurityPolicy:
-      config.app.env === "production",
+    contentSecurityPolicy: config.app.env === "production",
   })
 );
 
 app.use(
   cors({
-    origin: config.app.clientUrl,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: [
       "GET",
@@ -90,8 +101,7 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message:
-      "Too many requests, please try again later.",
+    message: "Too many requests, please try again later.",
   },
 });
 
