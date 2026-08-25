@@ -157,9 +157,9 @@ const startServer = async () => {
 
     console.log("MongoDB connected successfully");
 
-    const PORT = config.app.port;
+    const PORT = process.env.PORT || config.app.port || 5000;
 
-    server = app.listen(PORT, () => {
+    server = app.listen(PORT, "0.0.0.0", () => {
       console.log(
         `Wanderlust API running on port ${PORT} in ${config.app.env} mode`
       );
