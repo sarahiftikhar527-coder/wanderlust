@@ -23,6 +23,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const loginActivityRoutes = require("./routes/loginActivityRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const featureRoutes = require("./routes/featureRoutes");
 
 const app = express();
 
@@ -50,10 +51,7 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (
-        !origin ||
-        allowedOrigins.includes(origin)
-      ) {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
@@ -140,11 +138,11 @@ app.get("/api", (_req, res) => {
       register: "/api/auth/register",
       experiences: "/api/experiences",
       categories: "/api/categories",
+      features: "/api/features",
       bookings: "/api/bookings",
       notifications: "/api/notifications",
       admin: "/api/admin",
-      loginActivities:
-        "/api/login-activities",
+      loginActivities: "/api/login-activities",
       contacts: "/api/contacts",
     },
   });
@@ -170,8 +168,7 @@ app.get("/api/auth", (_req, res) => {
       me: "GET /api/auth/me",
       profile: "PUT /api/auth/profile",
       password: "PUT /api/auth/password",
-      favorites:
-        "GET /api/auth/favorites",
+      favorites: "GET /api/auth/favorites",
       toggleFavorite:
         "POST /api/auth/favorites/:experienceId",
       deleteAccount:
@@ -193,6 +190,11 @@ app.use(
 app.use(
   "/api/categories",
   categoryRoutes
+);
+
+app.use(
+  "/api/features",
+  featureRoutes
 );
 
 app.use(
@@ -265,6 +267,10 @@ const startServer = async () => {
 
         console.log(
           `Register: POST http://localhost:${PORT}/api/auth/register`
+        );
+
+        console.log(
+          `Features: http://localhost:${PORT}/api/features`
         );
       }
     );
