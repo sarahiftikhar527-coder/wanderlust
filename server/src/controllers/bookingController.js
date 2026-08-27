@@ -113,7 +113,9 @@ const calculateBookingPrice = (
     Number(price) * 0.5 * children;
 
   return Number(
-    (adultPrice + childPrice).toFixed(2)
+    (
+      adultPrice + childPrice
+    ).toFixed(2)
   );
 };
 
@@ -521,7 +523,10 @@ exports.getBooking = async (
       currentUserId;
 
     const isAdmin =
-      req.user.role === 'ADMIN';
+      String(
+        req.user.role || ''
+      ).toUpperCase() ===
+      'ADMIN';
 
     if (!isOwner && !isAdmin) {
       return next(
@@ -619,8 +624,9 @@ exports.cancelBooking = async (
     }
 
     if (
-      new Date(booking.bookingDate) <=
-      new Date()
+      new Date(
+        booking.bookingDate
+      ) <= new Date()
     ) {
       return next(
         new AppError(
@@ -689,7 +695,9 @@ exports.getAllBookings = async (
 ) => {
   try {
     if (
-      req.user?.role !==
+      String(
+        req.user?.role || ''
+      ).toUpperCase() !==
       'ADMIN'
     ) {
       return next(
@@ -829,7 +837,9 @@ exports.updateBookingStatus =
   ) => {
     try {
       if (
-        req.user?.role !==
+        String(
+          req.user?.role || ''
+        ).toUpperCase() !==
         'ADMIN'
       ) {
         return next(
@@ -1078,7 +1088,10 @@ exports.deleteBooking = async (
     }
 
     const isAdmin =
-      req.user.role === 'ADMIN';
+      String(
+        req.user.role || ''
+      ).toUpperCase() ===
+      'ADMIN';
 
     const isOwner =
       booking.user.toString() ===

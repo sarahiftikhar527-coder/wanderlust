@@ -4,12 +4,8 @@ const User = require('../models/User');
 const { verifyToken } = require('../utils/jwt');
 const AppError = require('../utils/AppError');
 
-/**
- * Get Bearer token from Authorization header
- */
 const getTokenFromRequest = (req) => {
-  const authorization =
-    req.headers.authorization;
+  const authorization = req.headers.authorization;
 
   if (
     !authorization ||
@@ -18,26 +14,18 @@ const getTokenFromRequest = (req) => {
     return null;
   }
 
-  if (
-    !authorization.startsWith('Bearer ')
-  ) {
+  if (!authorization.startsWith('Bearer ')) {
     return null;
   }
 
-  const token =
-    authorization
-      .slice(7)
-      .trim();
+  const token = authorization
+    .slice(7)
+    .trim();
 
   return token || null;
 };
 
-/**
- * Get authenticated user from JWT
- */
-const getUserFromToken = async (
-  token
-) => {
+const getUserFromToken = async (token) => {
   let decoded;
 
   try {
@@ -59,10 +47,7 @@ const getUserFromToken = async (
     );
   }
 
-  if (
-    !decoded ||
-    !decoded.id
-  ) {
+  if (!decoded || !decoded.id) {
     throw new AppError(
       'Invalid authentication token.',
       401
@@ -80,10 +65,7 @@ const getUserFromToken = async (
     );
   }
 
-  const user =
-    await User.findById(
-      decoded.id
-    );
+  const user = await User.findById(decoded.id);
 
   if (!user) {
     throw new AppError(
@@ -102,17 +84,9 @@ const getUserFromToken = async (
   return user;
 };
 
-/**
- * Protect private routes
- */
-exports.protect = async (
-  req,
-  res,
-  next
-) => {
+exports.protect = async (req, res, next) => {
   try {
-    const token =
-      getTokenFromRequest(req);
+    const token = getTokenFromRequest(req);
 
     if (!token) {
       return next(
@@ -123,10 +97,7 @@ exports.protect = async (
       );
     }
 
-    const user =
-      await getUserFromToken(
-        token
-      );
+    const user = await getUserFromToken(token);
 
     req.user = user;
 
@@ -136,17 +107,6 @@ exports.protect = async (
   }
 };
 
-/**
- * Restrict route to specific roles
- *
- * Example:
- * router.get(
- *   '/admin',
- *   protect,
- *   restrictTo('ADMIN'),
- *   controller
- * );
- */
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -170,25 +130,19 @@ exports.restrictTo = (...roles) => {
       );
     }
 
-    const currentRole =
-      String(
-        req.user.role || ''
-      )
+    const currentRole = String(
+      req.user.role || ''
+    )
+      .trim()
+      .toUpperCase();
+
+    const allowedRoles = roles.map((role) =>
+      String(role)
         .trim()
-        .toUpperCase();
+        .toUpperCase()
+    );
 
-    const allowedRoles =
-      roles.map((role) =>
-        String(role)
-          .trim()
-          .toUpperCase()
-      );
-
-    if (
-      !allowedRoles.includes(
-        currentRole
-      )
-    ) {
+    if (!allowedRoles.includes(currentRole)) {
       return next(
         new AppError(
           'You do not have permission to perform this action.',
@@ -201,15 +155,6 @@ exports.restrictTo = (...roles) => {
   };
 };
 
-/**
- * Optional authentication
- *
- * If token exists and is valid,
- * req.user will contain the user.
- *
- * Otherwise request continues
- * without authentication.
- */
 exports.optionalAuth = async (
   req,
   res,
@@ -218,19 +163,14 @@ exports.optionalAuth = async (
   try {
     req.user = undefined;
 
-    const token =
-      getTokenFromRequest(req);
+    const token = getTokenFromRequest(req);
 
     if (!token) {
       return next();
     }
 
     try {
-      const user =
-        await getUserFromToken(
-          token
-        );
-
+      const user = await getUserFromToken(token);
       req.user = user;
     } catch (err) {
       req.user = undefined;
@@ -239,7 +179,6 @@ exports.optionalAuth = async (
     return next();
   } catch (err) {
     req.user = undefined;
-
     return next();
   }
 };

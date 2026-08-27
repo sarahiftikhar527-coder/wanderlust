@@ -57,4 +57,10 @@ router.put(
   bookingController.updateBookingStatus
 );
 
+router.delete(
+  '/:id',
+  protect,
+  bookingController.deleteBooking
+);
+
 module.exports = router;
