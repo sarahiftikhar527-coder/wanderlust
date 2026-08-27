@@ -12,42 +12,47 @@ const {
 
 const {
   protect,
-  authorize,
-} = require("../middleware/auth");
+  restrictTo,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.get("/", getFeatures);
 
-router.get("/all", protect, authorize("Admin"), getAllFeatures);
+router.get(
+  "/all",
+  protect,
+  restrictTo("ADMIN"),
+  getAllFeatures
+);
 
 router.get("/:id", getFeatureById);
 
 router.post(
   "/",
   protect,
-  authorize("Admin"),
+  restrictTo("ADMIN"),
   createFeature
 );
 
 router.put(
   "/:id",
   protect,
-  authorize("Admin"),
+  restrictTo("ADMIN"),
   updateFeature
 );
 
 router.patch(
   "/:id/toggle",
   protect,
-  authorize("Admin"),
+  restrictTo("ADMIN"),
   toggleFeature
 );
 
 router.delete(
   "/:id",
   protect,
-  authorize("Admin"),
+  restrictTo("ADMIN"),
   deleteFeature
 );
 
