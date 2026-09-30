@@ -31,6 +31,7 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
 const allowedOrigins = [
+  "https://wanderlust-liard-pi.vercel.app",
   "https://wanderlust-travel-one.vercel.app",
   "https://wanderlust-travel-fn2ku4ewn-sarahiftikhar527-6790s-projects.vercel.app",
   config.app.clientUrl,
