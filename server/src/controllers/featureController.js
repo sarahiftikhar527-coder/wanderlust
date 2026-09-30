@@ -1,4 +1,4 @@
-const Feature = require("../models/Feature");
+const Feature = require("../models/Features");
 
 const getFeatures = async (req, res, next) => {
   try {
